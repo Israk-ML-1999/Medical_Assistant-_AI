@@ -72,11 +72,11 @@ def create_context_cache(extracted_text: str, display_name: Optional[str] = None
     if display_name is None:
         display_name = f"medai-doc-cache-{datetime.datetime.utcnow().strftime('%Y%m%d%H%M%S%f')}"
 
-    # Gemini 2.5 context caching requires a minimum of 1024 tokens.
+    # Gemini 2.5 context caching requires a minimum of 4096 tokens.
     # To bypass this limit for short texts, we pad it with repeated text.
-    if len(extracted_text) < 5000:
-        # Pad until it is at least 5,000 characters (~1200 tokens)
-        padding_needed = 5000 - len(extracted_text)
+    if len(extracted_text) < 20000:
+        # Pad until it is at least 20,000 characters (~4500 tokens)
+        padding_needed = 20000 - len(extracted_text)
         padding_str = "\n\n[Padding to bypass minimum token limit for caching. Please ignore.]\n"
         repetitions = (padding_needed // len(padding_str)) + 1
         extracted_text += padding_str * repetitions
