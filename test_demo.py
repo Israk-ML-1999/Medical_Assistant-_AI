@@ -5,14 +5,14 @@ url = "http://127.0.0.1:8000/clinical-report-structure/generate"
 
 payload = {
   "live_transcript": "Doctor: কেমন আছেন আপনি?\nPatient: ভালো আছি ডাক্তার সাহেব, কিন্তু গত দুইদিন ধরে একটু জ্বর জ্বর লাগছে আর গায়ে ব্যথা।\nDoctor: বুঝতে পেরেছি। আর কোনো সমস্যা? কাশি বা গলা ব্যথা আছে?\nPatient: না, কাশি নেই তবে মাথা ব্যথা আছে।",
-  "chat_history": [
+  "conversation_history": [
     {
-      "role": "user",
-      "content": "Please review my recent lab report."
+      "user_query": "hello how are you?",
+      "chat_respons": "Hello! I am doing well, thank you. How can I assist you with your patient consultation today?"
     },
     {
-      "role": "assistant",
-      "content": "I have reviewed your CBC report. Your hemoglobin is slightly low."
+      "user_query": "hello",
+      "chat_respons": "Hello! how can i help you?"
     }
   ],
   "document_texts": [

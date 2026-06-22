@@ -26,7 +26,7 @@ async def generate_clinical_report_endpoint(request: ClinicalReportRequest):
     try:
         result = await generate_clinical_report_service(
             live_transcript=request.live_transcript,
-            chat_history=request.chat_history,
+            conversation_history=request.conversation_history,
             document_texts=request.document_texts,
             example_structure=request.example_structure,
         )

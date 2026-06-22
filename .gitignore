@@ -44,3 +44,4 @@ node_modules/
 *.wav
 secret/
 .
+test_demo.py
