@@ -1,59 +1,35 @@
 """
-app/Test_result/router.py
+app/clinical_report_structure/router.py
 
-FastAPI router for the Test Result analysis endpoint.
+FastAPI router for generating clinical report based on example structure.
 """
 
-from typing import List, Optional
-
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException
-
-from app.Test_result.enhnce_request import TestResultResponse
-from app.Test_result.llm_service import generate_test_results
+from fastapi import APIRouter, HTTPException
+from app.clinical_report_structure.Report_request import ClinicalReportRequest, ClinicalReportResponse
+from app.clinical_report_structure.report_llm_service import generate_clinical_report_service
 
 router = APIRouter(
-    prefix="/test-result",
-    tags=["Test Result"],
+    prefix="/clinical-report-structure",
+    tags=["Clinical Report Structure"],
 )
-
 
 @router.post(
-    "/analyze",
-    response_model=TestResultResponse,
-    summary="Analyze documents/text/conversation and return structured test results",
+    "/generate",
+    response_model=ClinicalReportResponse,
+    summary="Generate patient report following a specific example structure",
 )
-async def analyze_test_results_endpoint(
-    document_files: Optional[List[UploadFile]] = File(
-        default=None, description="Optional multiple files (PDF/DOC/Image) - lab/imaging/ECG reports, etc."
-    ),
-    document_text: Optional[str] = Form(
-        default=None, description="Optional raw document text (may include OCR output)"
-    ),
-    conversation: Optional[str] = Form(
-        default=None, description="Optional doctor-patient conversation transcript"
-    ),
-    structured_format: Optional[str] = Form(
-        default=None, description="Optional structured format"
-    ),
-):
+async def generate_clinical_report_endpoint(request: ClinicalReportRequest):
     """
-    Analyzes uploaded documents, raw text, and/or conversation to identify all
-    tests performed, their results, and recommended follow-up tests, grouped into
-    dynamic sections (Laboratory Results, Imaging, ECG & Cardiology,
-    Microbiology & Culture, Recommended Follow-up Tests, etc.)
+    Analyzes live transcript, chat history, and document texts, 
+    and generates a report strictly following the provided example_structure format.
     """
-    if not document_files and not document_text and not conversation:
-        raise HTTPException(
-            status_code=400,
-            detail="At least one of document_files, document_text, or conversation must be provided.",
-        )
-
     try:
-        result = await generate_test_results(
-            document_files=document_files,
-            document_text=document_text,
-            conversation=conversation,
+        result = await generate_clinical_report_service(
+            live_transcript=request.live_transcript,
+            chat_history=request.chat_history,
+            document_texts=request.document_texts,
+            example_structure=request.example_structure,
         )
-        return TestResultResponse(**result)
+        return ClinicalReportResponse(**result)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Test result analysis failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Clinical report generation failed: {str(e)}")

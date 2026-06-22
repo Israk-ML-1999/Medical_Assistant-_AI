@@ -18,6 +18,7 @@ from app.MedAi_chatbot.router import router as medai_chatbot_router
 from app.OCR_file_to_text.router import router as ocr_router
 from app.preview.router import router as preview_router
 from app.generate_from_description.router import router as generate_from_description_router
+from app.clinical_report_structure.router import router as clinical_report_structure_router
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -40,6 +41,7 @@ app.include_router(medai_chatbot_router)
 app.include_router(ocr_router)
 app.include_router(preview_router)
 app.include_router(generate_from_description_router)
+app.include_router(clinical_report_structure_router)
 
 
 @app.get("/", tags=["Health"])
