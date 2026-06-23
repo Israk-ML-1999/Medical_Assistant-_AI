@@ -13,18 +13,19 @@ from app.context_caching.cache_service import create_context_cache, get_cached_c
 from app.MedAi_chatbot.chat_request import ConversationPair
 
 
-SYSTEM_PROMPT = """You are MedAI, a clinical assistant chatbot helping a licensed doctor
-during a patient consultation. You may be given:
-- Cached or provided patient document text (lab reports, prescriptions, history, etc.),
-  which may contain OCR artifacts - interpret medical meaning carefully.
+SYSTEM_PROMPT = """You are MedAI, a clinical assistant chatbot helping a licensed doctor during a patient consultation. You may be given:
+- Cached or provided patient document text (lab reports, prescriptions, history, etc.), which may contain OCR artifacts - interpret medical meaning carefully.
 - A live doctor-patient conversation transcript (ongoing consultation).
 - Previous chat history with this doctor.
 - The doctor's current question.
 
-If the doctor asks a casual greeting (e.g., 'hi', 'hello') or a general medical question, answer it normally and politely. 
-If the doctor asks about the patient but no patient documents or transcript are provided in the context, clearly state in Bengali or English that you do not have any patient information at this moment.
-Otherwise, answer the doctor's question CONCISELY and ACCURATELY using only the information available in the provided context.
-Respond in the same language the doctor used in their question English or any language. Do not include any JSON or markdown - just a direct, natural-language answer suitable for display in a chat UI.
+GUIDELINES FOR ANSWERING:
+1. CASUAL GREETINGS & GENERAL QUESTIONS: If the doctor asks a casual greeting (e.g., 'hi', 'hello') or a general medical question, answer it normally, politely, and helpfully.
+2. CLINICAL SUGGESTIONS & TEMPLATES: If the doctor asks for a general suggestion, guidelines, template, or how to write a report for a specific condition/symptom (even if they refer to 'a patient' or 'this patient' with described symptoms, e.g., 'how can I make a report for a patient with fever for 3 days?'), provide a helpful, structured clinical suggestion, template, or advice normally and politely.
+3. QUESTIONS ABOUT PATIENT'S ACTUAL DATA: If the doctor asks about the specific patient's actual records, lab results, history, or what was discussed in the consultation (e.g., 'what is the patient's name?', 'what did the patient say about their pain?', 'what are the lab results?'), but no patient documents or transcript are provided in the context, clearly state in Spanish, Hungarian, French or English that you do not have any patient information at this moment.
+4. PATIENT-CONTEXT BASED ANSWERS: If patient documents or transcript are provided, answer the doctor's questions CONCISELY and ACCURATELY using the provided context.
+
+Respond in the same language the doctor used in their question (English or any language). Do not include any JSON or markdown - just a direct, natural-language answer suitable for display in a chat UI.
 """
 
 
@@ -43,7 +44,7 @@ def _build_user_content_parts(
     live_transcript: Optional[str],
     conversation_history: Optional[List[ConversationPair]],
     document_text: Optional[str] = None,
-) -> List[str]:  # <-- এখানে List[types.Part] এর বদলে List[str] ব্যবহার করা হচ্ছে
+) -> List[str]:
     """Builds the non-cached portion of the prompt as plain strings."""
     parts: List[str] = []
 
@@ -68,8 +69,11 @@ def _generate_answer_with_cache(cache_name: str, user_parts: List[str]) -> str:
 
     generation_config = types.GenerateContentConfig(
         temperature=0.2, 
-        max_output_tokens=1024,
-        cached_content=cache_name
+        max_output_tokens=4096,
+        cached_content=cache_name,
+        thinking_config=types.ThinkingConfig(
+            thinking_level="LOW"
+        )
     )
     response = client.models.generate_content(
         model=settings.GEMINI_FLASH_CACHE_MODEL,
@@ -88,8 +92,11 @@ def _generate_answer_no_cache(user_parts: List[str]) -> str:
 
     generation_config = types.GenerateContentConfig(
         temperature=0.2, 
-        max_output_tokens=1024,
-        system_instruction=SYSTEM_PROMPT  
+        max_output_tokens=4096,
+        system_instruction=SYSTEM_PROMPT,
+        thinking_config=types.ThinkingConfig(
+            thinking_level="LOW"
+        )
     )
     
     response = client.models.generate_content(
@@ -129,14 +136,28 @@ async def generate_chat_response(
         
     has_document_texts = len(valid_docs) > 0
 
+    # Filter out default swagger values from live_transcript
+    clean_transcript = None
+    if live_transcript and live_transcript.strip().lower() not in ("", "null", "none", "string"):
+        clean_transcript = live_transcript.strip()
+
+    # Filter out default swagger values from conversation_history
+    clean_history = []
+    if conversation_history:
+        for pair in conversation_history:
+            q = pair.user_query.strip() if pair.user_query else ""
+            r = pair.chat_respons.strip() if pair.chat_respons else ""
+            if q.lower() not in ("", "null", "none", "string") or r.lower() not in ("", "null", "none", "string"):
+                clean_history.append(pair)
+
     # ------------------------------------------------------------------
     # Case 1: cache_name provided -> reuse cache, no new cache created
     # ------------------------------------------------------------------
     if has_cache_name:
         user_parts = _build_user_content_parts(
             question=question,
-            live_transcript=live_transcript,
-            conversation_history=conversation_history,
+            live_transcript=clean_transcript,
+            conversation_history=clean_history,
             document_text=None,
         )
 
@@ -166,8 +187,8 @@ async def generate_chat_response(
 
         user_parts = _build_user_content_parts(
             question=question,
-            live_transcript=live_transcript,
-            conversation_history=conversation_history,
+            live_transcript=clean_transcript,
+            conversation_history=clean_history,
             document_text=combined_doc_text,
         )
 
@@ -200,8 +221,8 @@ async def generate_chat_response(
     # ------------------------------------------------------------------
     user_parts = _build_user_content_parts(
         question=question,
-        live_transcript=live_transcript,
-        conversation_history=conversation_history,
+        live_transcript=clean_transcript,
+        conversation_history=clean_history,
         document_text=None,
     )
 

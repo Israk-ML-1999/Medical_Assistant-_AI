@@ -19,6 +19,7 @@ from app.OCR_file_to_text.router import router as ocr_router
 from app.preview.router import router as preview_router
 from app.generate_from_description.router import router as generate_from_description_router
 from app.clinical_report_structure.router import router as clinical_report_structure_router
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -31,7 +32,14 @@ app = FastAPI(
     debug=settings.DEBUG,
 )
 
-
+# Fixed middleware configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
 # Register all routers
 app.include_router(soap_router)
 app.include_router(patient_summary_router)
