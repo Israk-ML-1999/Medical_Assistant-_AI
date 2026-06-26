@@ -79,11 +79,43 @@ def _extract_json(text: str) -> dict:
     return json.loads(text)
 
 
+def _build_language_instruction(input_language: Optional[str], output_language: Optional[str]) -> str:
+    lang_map = {
+        "bn": "Bangla",
+        "en": "English",
+        "hu": "Hungarian",
+        "es": "Spanish",
+        "fr": "French",
+        "de": "German"
+    }
+    
+    in_lang_name = lang_map.get(input_language.lower()) if input_language else None
+    out_lang_name = lang_map.get(output_language.lower()) if output_language else None
+    
+    instructions = ["\n\n--- LANGUAGE RULES ---"]
+    
+    if in_lang_name:
+        instructions.append(f"1. The input information is primarily in: {in_lang_name}. Please analyze it using this context.")
+    else:
+        instructions.append("1. Automatically identify the language of the input information.")
+        
+    if out_lang_name:
+        instructions.append(f"2. You MUST generate all the text content/values inside the JSON response in this language: {out_lang_name}.")
+    else:
+        instructions.append("2. You MUST generate all the text content/values inside the JSON response in the same language as the input information/document.")
+        
+    instructions.append("3. Keep the JSON keys (e.g., 'Subjective', 'Objective', 'Assessment', 'Plan') exactly as defined in the schema in English. Do not translate the JSON keys themselves, only the generated values/descriptions.")
+    
+    return "\n".join(instructions)
+
+
 async def generate_soap_note(
     document_files: Optional[List[UploadFile]] = None,
     document_text: Optional[str] = None,
     conversation: Optional[str] = None,
     user_instruction: Optional[str] = None,
+    input_language: Optional[str] = None,
+    output_language: Optional[str] = None,
 ) -> dict:
     """
     Generates a SOAP note using Gemini (Vertex AI) based on uploaded files,
@@ -102,6 +134,9 @@ async def generate_soap_note(
     system_text = BASE_SYSTEM_PROMPT
     if user_instruction:
         system_text += f"\n\nDOCTOR'S CUSTOM INSTRUCTIONS (high priority):\n{user_instruction}\n"
+
+    # Add language instructions
+    system_text += _build_language_instruction(input_language, output_language)
 
     content_parts.append(types.Part.from_text(text=system_text))
 

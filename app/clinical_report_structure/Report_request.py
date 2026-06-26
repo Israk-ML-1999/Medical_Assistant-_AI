@@ -10,6 +10,8 @@ class ClinicalReportRequest(BaseModel):
     conversation_history: Optional[List[ConversationPair]] = Field(default=[], description="Conversation history as query/response pairs")
     document_texts: Optional[List[str]] = Field(default=[], description="Extracted texts from documents/reports")
     example_structure: List[Dict[str, Any]] = Field(..., description="The example JSON structure to follow for the report")
+    input_language: Optional[str] = Field(default=None, description="Optional input language (e.g. bn, en, hu, es, fr, de)")
+    output_language: Optional[str] = Field(default=None, description="Optional output language (e.g. bn, en, hu, es, fr, de)")
 
 class ClinicalReportResponse(BaseModel):
     report: Any = Field(..., description="The generated report in JSON format following the example_structure")

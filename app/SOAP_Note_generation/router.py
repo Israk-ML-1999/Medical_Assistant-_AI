@@ -35,6 +35,12 @@ async def generate_soap_note_endpoint(
     user_instruction: Optional[str] = Form(
         default=None, description="Optional custom instruction from the doctor for better output"
     ),
+    input_language: Optional[str] = Form(
+        default=None, description="Optional input language (e.g. bn, en, hu, es, fr, de)"
+    ),
+    output_language: Optional[str] = Form(
+        default=None, description="Optional output language (e.g. bn, en, hu, es, fr, de)"
+    ),
 ):
     """
     Generates a structured SOAP note (Subjective, Objective, Assessment, Plan)
@@ -54,6 +60,8 @@ async def generate_soap_note_endpoint(
             document_text=document_text,
             conversation=conversation,
             user_instruction=user_instruction,
+            input_language=input_language,
+            output_language=output_language,
         )
         return SOAPNoteResponse(**result)
     except Exception as e:

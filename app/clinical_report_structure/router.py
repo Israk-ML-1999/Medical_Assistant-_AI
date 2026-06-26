@@ -29,6 +29,8 @@ async def generate_clinical_report_endpoint(request: ClinicalReportRequest):
             conversation_history=request.conversation_history,
             document_texts=request.document_texts,
             example_structure=request.example_structure,
+            input_language=request.input_language,
+            output_language=request.output_language,
         )
         return ClinicalReportResponse(**result)
     except Exception as e:

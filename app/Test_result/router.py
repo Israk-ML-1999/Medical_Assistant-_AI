@@ -32,6 +32,12 @@ async def analyze_test_results_endpoint(
     conversation: Optional[str] = Form(
         default=None, description="Optional doctor-patient conversation transcript"
     ),
+    input_language: Optional[str] = Form(
+        default=None, description="Optional input language (e.g. bn, en, hu, es, fr, de)"
+    ),
+    output_language: Optional[str] = Form(
+        default=None, description="Optional output language (e.g. bn, en, hu, es, fr, de)"
+    ),
 ):
     """
     Analyzes uploaded documents, raw text, and/or conversation to identify all
@@ -50,6 +56,8 @@ async def analyze_test_results_endpoint(
             document_files=document_files,
             document_text=document_text,
             conversation=conversation,
+            input_language=input_language,
+            output_language=output_language,
         )
         return TestResultResponse(**result)
     except Exception as e:

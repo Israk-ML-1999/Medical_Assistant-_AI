@@ -32,6 +32,12 @@ async def generate_patient_summary_endpoint(
     conversation: Optional[str] = Form(
         default=None, description="Optional doctor-patient conversation transcript"
     ),
+    input_language: Optional[str] = Form(
+        default=None, description="Optional input language (e.g. bn, en, hu, es, fr, de)"
+    ),
+    output_language: Optional[str] = Form(
+        default=None, description="Optional output language (e.g. bn, en, hu, es, fr, de)"
+    ),
 ):
     """
     Generates a dynamic patient summary (ICD coding, conditions, medications, allergies,
@@ -49,6 +55,8 @@ async def generate_patient_summary_endpoint(
             document_files=document_files,
             document_text=document_text,
             conversation=conversation,
+            input_language=input_language,
+            output_language=output_language,
         )
         return PatientSummaryResponse(**result)
     except Exception as e:

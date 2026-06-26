@@ -25,11 +25,43 @@ FINAL OUTPUT:
 After your thought process, output the structured report under the key "final_report". Provide your output as strictly valid, parseable JSON.
 """
 
+def _build_language_instruction(input_language: Optional[str], output_language: Optional[str]) -> str:
+    lang_map = {
+        "bn": "Bangla",
+        "en": "English",
+        "hu": "Hungarian",
+        "es": "Spanish",
+        "fr": "French",
+        "de": "German"
+    }
+    
+    in_lang_name = lang_map.get(input_language.lower()) if input_language else None
+    out_lang_name = lang_map.get(output_language.lower()) if output_language else None
+    
+    instructions = ["\n\n--- LANGUAGE RULES ---"]
+    
+    if in_lang_name:
+        instructions.append(f"1. The input information is primarily in: {in_lang_name}. Analyze it in this language context.")
+    else:
+        instructions.append("1. Automatically identify the language of the input medical information.")
+        
+    if out_lang_name:
+        instructions.append(f"2. You MUST generate all text content/values inside the final JSON report in this language: {out_lang_name}.")
+    else:
+        instructions.append("2. You MUST generate all text content/values inside the final JSON report in the same language as the patient document/input information.")
+        
+    instructions.append("3. Keep the JSON structure keys exactly as provided in the 'example_structure'. Do not translate the JSON keys themselves, only the populated values/details inside those keys.")
+    
+    return "\n".join(instructions)
+
+
 def _build_prompt(
     live_transcript: str,
     conversation_history: Optional[List[Any]],
     document_texts: Optional[List[str]],
-    example_structure: List[Dict[str, Any]]
+    example_structure: List[Dict[str, Any]],
+    input_language: Optional[str] = None,
+    output_language: Optional[str] = None,
 ) -> str:
     prompt_parts = []
     
@@ -52,6 +84,9 @@ def _build_prompt(
     
     structure_str = json.dumps(example_structure, ensure_ascii=False, indent=2)
     prompt_parts.append(f"--- SKELETON TO STRICTLY FOLLOW (IGNORE DUMMY DATA) ---\n{structure_str}")
+    
+    # Add language rules
+    prompt_parts.append(_build_language_instruction(input_language, output_language))
     
     prompt_parts.append("\nGenerate the JSON output now, starting with your '_clinical_thought_process'.")
     return "\n\n".join(prompt_parts)
@@ -92,9 +127,11 @@ async def generate_clinical_report_service(
     live_transcript: str,
     conversation_history: Optional[List[Any]],
     document_texts: Optional[List[str]],
-    example_structure: List[Dict[str, Any]]
+    example_structure: List[Dict[str, Any]],
+    input_language: Optional[str] = None,
+    output_language: Optional[str] = None,
 ) -> dict:
-    prompt = _build_prompt(live_transcript, conversation_history, document_texts, example_structure)
+    prompt = _build_prompt(live_transcript, conversation_history, document_texts, example_structure, input_language, output_language)
     loop = asyncio.get_event_loop()
     result = await loop.run_in_executor(None, _generate_report, prompt)
     return result
